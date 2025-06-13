@@ -1,3 +1,5 @@
+import re
+import math
 import pandas as pd
 import pathlib
 
@@ -8,7 +10,7 @@ def _build_df(
     if isinstance(target, pd.DataFrame):
         return target
     try:
-        return pd.read_csv(target, parse_dates=parse_dates)
+        return pd.read_csv(target, parse_dates=parse_dates, dayfirst=True)
     except Exception as e:
         raise ValueError(f"Invalid object passed to pd.read_csv {target}. {e}") from e
 
@@ -23,6 +25,20 @@ def get_sql_type_from_numpy_dtype(numpy_dtype):
     return "VARCHAR(255)"
 
 
+def get_tuple(values):
+    out = []
+    for val in values:
+        if pd.isnull(val) or pd.isna(val):
+            out.append(None)
+        elif type(val) in [int, float, str, bool]:
+            out.append(val)
+        elif re.match(".*(date|time).*", str(type(val)).lower()):
+            out.append(val.strftime("%Y-%m-%d"))
+        else:
+            out.append(val)
+    joined = ", ".join([repr(val) if val is not None else "NULL" for val in out])
+    return f"({joined})"
+
 def csv_to_sql_dump(
     target: str | pathlib.Path | pd.DataFrame,
     table_name: str,
@@ -31,11 +47,14 @@ def csv_to_sql_dump(
     parse_dates: list[str] = (),
 ) -> None:
     df = _build_df(target, parse_dates)
+    if len(df.columns) != len(set(df.columns)):
+        raise ValueError(f"Duplicated columns found: {df.columns}")
+
     lines = [
-        f"DROP DATABASE IF EXISTS {database_name};",
-        f"CREATE DATABASE {database_name};",
+        f"CREATE DATABASE IF NOT EXISTS {database_name};",
         f"USE {database_name};",
         "",
+        f"DROP TABLE IF EXISTS {table_name};",
         f"CREATE TABLE {table_name} ("
     ]
     if "id" not in df.columns:
@@ -53,7 +72,7 @@ def csv_to_sql_dump(
     insert_template = f"INSERT INTO {table_name} ({columns}) VALUES"
 
     for i, row in df.iterrows():
-        lines.append(f"{insert_template} {tuple(row.values)};")
+        lines.append(f"{insert_template} {get_tuple(row.values)};")
 
     with open(output_filepath, "w") as f:
         f.write("\n".join(lines))

@@ -1,8 +1,7 @@
-DROP DATABASE IF EXISTS testdb;
-CREATE DATABASE testdb;
+CREATE DATABASE IF NOT EXISTS testdb;
 USE testdb;
 
-CREATE TABLE dogs (
+DROP TABLE IF EXISTS dogs;CREATE TABLE dogs (
     `id` INT PRIMARY KEY AUTO_INCREMENT,
     `name` VARCHAR(255),
     `age` INT,
@@ -11,6 +10,6 @@ CREATE TABLE dogs (
     `dob` DATETIME
 );
 
-INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('rocky', 4, 'male', 'german shepherd', Timestamp('2025-01-15 00:00:00'));
-INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('fifi', 5, 'female', 'german shepherd', Timestamp('2023-09-09 00:00:00'));
-INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('baaron', 6, 'male', 'german shepherd', Timestamp('2017-07-31 00:00:00'));
+INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('rocky', 4, 'male', 'german shepherd', '2025-01-15');
+INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('fifi', 5, 'female', 'german shepherd', '2023-09-09');
+INSERT INTO dogs (`name`, `age`, `gender`, `breed`, `dob`) VALUES ('baaron', 6, 'male', NULL, '2017-07-31');
